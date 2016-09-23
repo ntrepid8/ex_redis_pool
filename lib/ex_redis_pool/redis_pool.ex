@@ -6,6 +6,8 @@ defmodule ExRedisPool.RedisPool do
   alias ExRedisPool.{PoolsSupervisor, RedisPoolWorker}
   require Logger
 
+  @noreply_timeout 300_000  # 5 minutes
+
   def start_link() do
     GenServer.start_link(__MODULE__, [], [])
   end
@@ -25,8 +27,6 @@ defmodule ExRedisPool.RedisPool do
   def init(opts) do
     # startup for the synchronous pool
     ## resolve the host
-    ## init eredis client
-    # sync_pool_ref = :erlang.make_ref()
     sync_pool_ref = {:global, :erlang.make_ref()}
     sync_pool_opts = [
       name:          sync_pool_ref,
@@ -43,19 +43,28 @@ defmodule ExRedisPool.RedisPool do
       connect_timeout: Keyword.get(opts, :connect_timeout, 5_000),
     ]
     {:ok, _} = PoolsSupervisor.new_pool(sync_pool_ref, sync_pool_opts, sync_worker_opts)
-    # Logger.debug("sync_pool_pid=#{inspect sync_pool_pid}")
-    # startup for the asynchronous pool
-    ## build_unique atom for the pool
-    ## resolve the host
-    ## init eredis client
-    ## start ets table to enqueue queries
 
-    # startup for the pool router
-    ## named with the atom the user supplied, routes request to correct pool
+    # startup for the asynchronous pool
+    async_pool_ref = {:global, :erlang.make_ref()}
+    async_pool_opts = [
+      name:          async_pool_ref,
+      worker_module: ExRedisPool.RedisPoolWorker,
+      size:          Keyword.get(opts, :async_pool_size, 10),
+      max_overflow:  Keyword.get(opts, :async_pool_max_overflow, 10),
+    ]
+    async_worker_opts = [
+      host:            Keyword.get(opts, :host, "127.0.0.1"),  # TODO - resolve host if name rather than IP
+      port:            Keyword.get(opts, :port, 6379),
+      database:        Keyword.get(opts, :database, :undefined),
+      password:        Keyword.get(opts, :password, ""),
+      reconnect_sleep: Keyword.get(opts, :reconnect_sleep, 100),
+      connect_timeout: Keyword.get(opts, :connect_timeout, 5_000),
+    ]
+    {:ok, _} = PoolsSupervisor.new_pool(async_pool_ref, async_pool_opts, async_worker_opts)
 
     state = %{
       sync_pool_ref: sync_pool_ref,
-      async_pool_ref: nil,
+      async_pool_ref: async_pool_ref,
     }
     {:ok, state}
   end
@@ -66,16 +75,16 @@ defmodule ExRedisPool.RedisPool do
     GenServer.call(pool, {:handle_q, [query, timeout]}, timeout)
   end
 
-  def q_noreply() do
-    
+  def q_noreply(pool, query) do
+    GenServer.cast(pool, {:handle_q_noreply, [query]})
   end
 
   def qp(pool, query_pipeline, timeout) do
     GenServer.call(pool, {:handle_qp, [query_pipeline, timeout]}, timeout)
   end
 
-  def qp_noreply() do
-    
+  def qp_noreply(pool, query_pipeline) do
+    GenServer.cast(pool, {:handle_q_noreply, [query_pipeline]})
   end
 
   # Callbacks
@@ -90,7 +99,12 @@ defmodule ExRedisPool.RedisPool do
     {:noreply, state}
   end
 
-  def handle_cast({:handle_q_noreply, []}, state) do
+  def handle_cast({:handle_q_noreply, [query]}, state) do
+    spawn(fn -> :poolboy.transaction(
+      state.async_pool_ref,
+      fn(pid) -> RedisPoolWorker.q_noreply(pid, query) end,
+      @noreply_timeout)
+    end)
     {:noreply, state}
   end
 
@@ -104,7 +118,12 @@ defmodule ExRedisPool.RedisPool do
     {:noreply, state}
   end
 
-  def handle_cast({:handle_qp_noreply, []}, state) do
+  def handle_cast({:handle_qp_noreply, [query_pipeline]}, state) do
+    spawn(fn -> :poolboy.transaction(
+      state.async_pool_ref,
+      fn(pid) -> RedisPoolWorker.qp(pid, query_pipeline) end,
+      @noreply_timeout)
+    end)
     {:noreply, state}
   end
 

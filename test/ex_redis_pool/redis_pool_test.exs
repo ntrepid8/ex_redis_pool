@@ -42,4 +42,18 @@ defmodule ExRedisPool.RedisPoolTest do
     {:ok, result} = ExRedisPool.RedisPool.q(pid, ["DEL", key], 5_000)
     assert result == "0"
   end
+
+  test "ExRedisPool.RedisPool.q_noreply/2 [basic operation]" do
+    {:ok, pid} = ExRedisPool.RedisPool.start_link()
+    key = "test_#{:crypto.rand_uniform(0, 1_000_000_000)}"
+    val = "#{:crypto.rand_uniform(0, 1_000_000_000)}"
+    :ok = ExRedisPool.RedisPool.q_noreply(pid, ["SET", key, val])
+    :timer.sleep(100)
+    {:ok, result} = ExRedisPool.RedisPool.q(pid, ["GET", key], 5_000)
+    assert result == val
+    :ok = ExRedisPool.RedisPool.q_noreply(pid, ["DEL", key])
+    :timer.sleep(100)
+    {:ok, result} = ExRedisPool.RedisPool.q(pid, ["GET", key], 5_000)
+    assert result == :undefined
+  end
 end
