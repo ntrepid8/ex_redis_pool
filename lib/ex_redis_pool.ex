@@ -84,7 +84,7 @@ defmodule ExRedisPool do
   """
   @spec q_noreply(atom, redis_query) :: [redis_result] | {:error, reason}
   def q_noreply(pool, query) do
-    
+    ExRedisPool.RedisPool.q_noreply(pool, query)
   end
 
   @doc """
@@ -104,6 +104,6 @@ defmodule ExRedisPool do
   """
   @spec qp_noreply(atom, [redis_query]) :: [redis_result] | {:error, reason}
   def qp_noreply(pool, query_pipeline) do
-    
+    ExRedisPool.RedisPool.qp_noreply(pool, query_pipeline)
   end
 end
