@@ -14,7 +14,11 @@ defmodule ExRedisPool.Mixfile do
   #
   # Type "mix help compile.app" for more information
   def application do
-    [applications: [:logger],
+    [applications: [
+      :eredis,
+      :logger,
+      :poolboy,
+      ],
      mod: {ExRedisPool, []}]
   end
 
@@ -28,6 +32,9 @@ defmodule ExRedisPool.Mixfile do
   #
   # Type "mix help deps" for more examples and options
   defp deps do
-    []
+    [
+      {:eredis, "~> 1.0"},
+      {:poolboy, "~> 1.5"},
+    ]
   end
 end
