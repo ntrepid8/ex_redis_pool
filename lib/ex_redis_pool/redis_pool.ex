@@ -6,8 +6,20 @@ defmodule ExRedisPool.RedisPool do
   alias ExRedisPool.{PoolsSupervisor, RedisPoolWorker}
   require Logger
 
-  def start_link(pool_name, opts \\ []) do
-    GenServer.start_link(__MODULE__, opts, [name: pool_name])
+  def start_link() do
+    GenServer.start_link(__MODULE__, [], [])
+  end
+
+  def start_link(pool) when is_atom(pool) do
+    GenServer.start_link(__MODULE__, [], [name: pool])
+  end
+
+  def start_link(opts) when is_list(opts) do
+    GenServer.start_link(__MODULE__, opts, [])
+  end
+
+  def start_link(pool, opts) when is_atom(pool) and is_list(opts) do
+    GenServer.start_link(__MODULE__, opts, [name: pool])
   end
 
   def init(opts) do
@@ -50,16 +62,16 @@ defmodule ExRedisPool.RedisPool do
 
   # API
 
-  def q(pool_name, query, timeout) do
-    GenServer.call(pool_name, {:handle_q, [query, timeout]}, timeout)
+  def q(pool, query, timeout) do
+    GenServer.call(pool, {:handle_q, [query, timeout]}, timeout)
   end
 
   def q_noreply() do
     
   end
 
-  def qp(pool_name, query_pipeline, timeout) do
-    GenServer.call(pool_name, {:handle_qp, [query_pipeline, timeout]}, timeout)
+  def qp(pool, query_pipeline, timeout) do
+    GenServer.call(pool, {:handle_qp, [query_pipeline, timeout]}, timeout)
   end
 
   def qp_noreply() do

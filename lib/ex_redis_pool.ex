@@ -3,7 +3,7 @@ defmodule ExRedisPool do
   import Supervisor.Spec, warn: false
 
   @type reason :: binary
-  @type pool_name :: atom
+  @type pool :: atom | pid
   @type reconnect_sleep :: :no_reconnect | integer
   @type redis_pool_option :: {:host, binary} |
                              {:port, integer} |
@@ -39,22 +39,40 @@ defmodule ExRedisPool do
   @doc """
   Start a new redis connection pool.
   """
-  @spec new(pool_name, [redis_pool_option] | nil) :: {:ok, pool_name} | {:error, reason}
-  def new(pool_name, opts \\ []) do
+  @spec new(pool, [redis_pool_option]) :: {:ok, pool} | {:error, reason}
+  def new(pool, opts) when is_atom(pool) and is_list(opts) do
     worker_opts = [
       id: :erlang.make_ref()
     ]
-    child_spec = worker(ExRedisPool.RedisPool, [pool_name, opts], worker_opts)
+    child_spec = worker(ExRedisPool.RedisPool, [pool, opts], worker_opts)
     {:ok, pid} = Supervisor.start_child(ExRedisPool.Supervisor, child_spec)
     pid
+  end
+
+  @spec new([redis_pool_option]) :: {:ok, pool} | {:error, reason}
+  def new(opts) when is_list(opts) do
+    worker_opts = [
+      id: :erlang.make_ref()
+    ]
+    child_spec = worker(ExRedisPool.RedisPool, [opts], worker_opts)
+    {:ok, pid} = Supervisor.start_child(ExRedisPool.Supervisor, child_spec)
+    pid
+  end
+
+  def new(pool) when is_atom(pool) do
+    new(pool, [])
+  end
+
+  def new() do
+    new([])
   end
 
   @doc """
   Run a synchronous redis query.
   """
   @spec q(atom, redis_query, integer) :: [redis_result] | {:error, reason}
-  def q(pool_name, query, timeout \\ @timeout) do
-    ExRedisPool.RedisPool.q(pool_name, query, timeout)
+  def q(pool, query, timeout \\ @timeout) do
+    ExRedisPool.RedisPool.q(pool, query, timeout)
   end
 
   @doc """
@@ -65,7 +83,7 @@ defmodule ExRedisPool do
   for synchronous queries.
   """
   @spec q_noreply(atom, redis_query) :: [redis_result] | {:error, reason}
-  def q_noreply(pool_name, query) do
+  def q_noreply(pool, query) do
     
   end
 
@@ -73,8 +91,8 @@ defmodule ExRedisPool do
   Run a synchronous query pipeline.
   """
   @spec qp(atom, [redis_query], integer) :: [redis_result] | {:error, reason}
-  def qp(pool_name, query_pipeline, timeout \\ @timeout) do
-    ExRedisPool.RedisPool.qp(pool_name, query_pipeline, timeout)
+  def qp(pool, query_pipeline, timeout \\ @timeout) do
+    ExRedisPool.RedisPool.qp(pool, query_pipeline, timeout)
   end
 
   @doc """
@@ -85,7 +103,7 @@ defmodule ExRedisPool do
   for synchronous query pipelines.
   """
   @spec qp_noreply(atom, [redis_query]) :: [redis_result] | {:error, reason}
-  def qp_noreply(pool_name, query_pipeline) do
+  def qp_noreply(pool, query_pipeline) do
     
   end
 end

@@ -62,4 +62,16 @@ defmodule ExRedisPoolTest do
     pid2 = ExRedisPool.new(:erpt4)
     pid3 = ExRedisPool.new(:erpt5)
   end
+
+  test "ExRedisPool.q/2 [pid only]" do
+    pid = ExRedisPool.new()
+    assert is_pid(pid) == true
+    key = "test_#{:crypto.rand_uniform(0, 1_000_000_000)}"
+    val = "#{:crypto.rand_uniform(0, 1_000_000_000)}"
+    {:ok, "OK"} = ExRedisPool.q(pid, ["SET", key, val])
+    {:ok, result} = ExRedisPool.q(pid, ["GET", key])
+    assert result == val
+    {:ok, result} = ExRedisPool.q(pid, ["DEL", key])
+    assert result == "1"
+  end
 end
