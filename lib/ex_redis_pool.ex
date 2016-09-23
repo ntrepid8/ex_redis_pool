@@ -1,5 +1,6 @@
 defmodule ExRedisPool do
   use Application
+  import Supervisor.Spec, warn: false
 
   @type reason :: binary
   @type pool_name :: atom
@@ -9,10 +10,14 @@ defmodule ExRedisPool do
                              {:database, binary} |
                              {:password, binary} |
                              {:reconnect_sleep, reconnect_sleep} |
-                             {:size, integer} |
-                             {:max_overflow, integer}
+                             {:sync_pool_size, integer} |
+                             {:sync_pool_max_overflow, integer} |
+                             {:async_pool_size, integer} |
+                             {:async_pool_max_overflow, integer}
   @type redis_query :: [binary]
   @type redis_result :: binary | :undefined
+
+  @timeout 5_000
 
   # See http://elixir-lang.org/docs/stable/elixir/Application.html
   # for more information on OTP Applications
@@ -22,6 +27,7 @@ defmodule ExRedisPool do
     children = [
       # Define workers and child supervisors to be supervised
       # worker(ExRedisPool.Worker, [arg1, arg2, arg3]),
+      supervisor(ExRedisPool.PoolsSupervisor, [])
     ]
 
     # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html
@@ -35,15 +41,20 @@ defmodule ExRedisPool do
   """
   @spec new(pool_name, [redis_pool_option] | nil) :: {:ok, pool_name} | {:error, reason}
   def new(pool_name, opts \\ []) do
-    
+    worker_opts = [
+      id: :erlang.make_ref()
+    ]
+    child_spec = worker(ExRedisPool.RedisPool, [pool_name, opts], worker_opts)
+    {:ok, pid} = Supervisor.start_child(ExRedisPool.Supervisor, child_spec)
+    pid
   end
 
   @doc """
   Run a synchronous redis query.
   """
   @spec q(atom, redis_query, integer) :: [redis_result] | {:error, reason}
-  def q(pool_name, query, timeout \\ 5_000) do
-    
+  def q(pool_name, query, timeout \\ @timeout) do
+    ExRedisPool.RedisPool.q(pool_name, query, timeout)
   end
 
   @doc """
@@ -62,8 +73,8 @@ defmodule ExRedisPool do
   Run a synchronous query pipeline.
   """
   @spec qp(atom, [redis_query], integer) :: [redis_result] | {:error, reason}
-  def qp(pool_name, query_pipeline, timeout \\ 5_000) do
-    
+  def qp(pool_name, query_pipeline, timeout \\ @timeout) do
+    ExRedisPool.RedisPool.qp(pool_name, query_pipeline, timeout)
   end
 
   @doc """
