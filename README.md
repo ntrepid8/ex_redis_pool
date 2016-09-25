@@ -2,10 +2,30 @@
 
 A Elixir Redis client with connection pools.
 
+## Features
+
+ExRedisPool implements several features with a slightly different twist than
+other Erlang/Elixir Redis clients.
+
+## Dual Connection Pools
+
 ExRedisPool supports two worker pools per process, one for synchronous queries
 and another for asynchronous queries. The goal is to provide high quality of
 service for calls that are waiting on a response, but also provide high
 throughput when a response is not needed immediately.
+
+By varying the size of the two work pools a relative throttle can be placed on the
+asynchronous requests.
+
+## Hostname Resolution on Startup
+
+By default some Redis clients resolve the DNS name of your Redis host every time they
+attempt to connect. In certain situations this DNS resolution can become a bottleneck
+and it's better to resolve names into IP addresses when the work pools start up,
+and only resolve them at that time.
+
+An added benefit is that if you want to switch over to a new Redis host, you can control
+the exact timing of the switch-over by restarting the ExRedisPool process.
 
 ## Installation
 
