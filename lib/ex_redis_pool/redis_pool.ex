@@ -3,7 +3,7 @@ defmodule ExRedisPool.RedisPool do
   Server for individual connection pools.
   """
   use GenServer
-  alias ExRedisPool.{PoolsSupervisor, RedisPoolWorker}
+  alias ExRedisPool.{PoolsSupervisor, RedisPoolWorker, HostUtil}
   require Logger
 
   @noreply_timeout 300_000  # 5 minutes
@@ -35,7 +35,7 @@ defmodule ExRedisPool.RedisPool do
       max_overflow:  Keyword.get(opts, :sync_pool_max_overflow, 10),
     ]
     sync_worker_opts = [
-      host:            Keyword.get(opts, :host, "127.0.0.1"),  # TODO - resolve host if name rather than IP
+      host:            Keyword.get(opts, :host, "127.0.0.1") |> HostUtil.resolve(),
       port:            Keyword.get(opts, :port, 6379),
       database:        Keyword.get(opts, :database, :undefined),
       password:        Keyword.get(opts, :password, ""),
@@ -53,7 +53,7 @@ defmodule ExRedisPool.RedisPool do
       max_overflow:  Keyword.get(opts, :async_pool_max_overflow, 10),
     ]
     async_worker_opts = [
-      host:            Keyword.get(opts, :host, "127.0.0.1"),  # TODO - resolve host if name rather than IP
+      host:            Keyword.get(opts, :host, "127.0.0.1") |> HostUtil.resolve(),
       port:            Keyword.get(opts, :port, 6379),
       database:        Keyword.get(opts, :database, :undefined),
       password:        Keyword.get(opts, :password, ""),

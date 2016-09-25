@@ -74,4 +74,16 @@ defmodule ExRedisPoolTest do
     {:ok, result} = ExRedisPool.q(pid, ["DEL", key])
     assert result == "1"
   end
+
+  test "ExRedisPool.new/2 [start host localhost rather than 127.0.0.1]" do
+    pid = ExRedisPool.new(host: "localhost")
+    assert is_pid(pid) == true
+    key = "test_#{:crypto.rand_uniform(0, 1_000_000_000)}"
+    val = "#{:crypto.rand_uniform(0, 1_000_000_000)}"
+    {:ok, "OK"} = ExRedisPool.q(pid, ["SET", key, val])
+    {:ok, result} = ExRedisPool.q(pid, ["GET", key])
+    assert result == val
+    {:ok, result} = ExRedisPool.q(pid, ["DEL", key])
+    assert result == "1"
+  end
 end
