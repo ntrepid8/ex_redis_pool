@@ -31,8 +31,8 @@ defmodule ExRedisPool.RedisPool do
     sync_pool_opts = [
       name:          sync_pool_ref,
       worker_module: ExRedisPool.RedisPoolWorker,
-      size:          Keyword.get(opts, :sync_pool_size, 10),
-      max_overflow:  Keyword.get(opts, :sync_pool_max_overflow, 10),
+      size:          Keyword.get(opts, :sync_pool_size, 25),
+      max_overflow:  Keyword.get(opts, :sync_pool_max_overflow, 100),
     ]
     sync_worker_opts = [
       host:            Keyword.get(opts, :host, "127.0.0.1") |> HostUtil.resolve(),
@@ -49,8 +49,8 @@ defmodule ExRedisPool.RedisPool do
     async_pool_opts = [
       name:          async_pool_ref,
       worker_module: ExRedisPool.RedisPoolWorker,
-      size:          Keyword.get(opts, :async_pool_size, 10),
-      max_overflow:  Keyword.get(opts, :async_pool_max_overflow, 10),
+      size:          Keyword.get(opts, :async_pool_size, 25),
+      max_overflow:  Keyword.get(opts, :async_pool_max_overflow, 100),
     ]
     async_worker_opts = [
       host:            Keyword.get(opts, :host, "127.0.0.1") |> HostUtil.resolve(),
