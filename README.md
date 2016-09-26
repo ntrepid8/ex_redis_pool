@@ -98,3 +98,7 @@ iex(14)> ExRedisPool.q(pid, ["GET", "chuck"])
 iex(15)> ExRedisPool.q(pid, ["GET", "afraid"])
 "nope"
 ```
+
+## TODO
+
+- automatic re-association with a connection pool after a crash
