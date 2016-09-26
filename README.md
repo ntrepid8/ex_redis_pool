@@ -106,5 +106,3 @@ iex(15)> ExRedisPool.q(pid, ["GET", "afraid"])
 ```
 
 ## TODO
-
-- add start_link function to run the `ExRedisPool.RedisPool` module in a different supervision tree
