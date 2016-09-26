@@ -46,11 +46,13 @@ If [available in Hex](https://hex.pm/docs/publish), the package can be installed
 ## Usage
 
 Start a new connection to the default Redis instance on localhost with a name:
+
 ```
 iex(1)> pid = ExRedisPool.new(:redis_pool)
 ```
 
 Or start a new connection to the default Redis instance on localhost without a name, just using the pid:
+
 ```
 iex(2)> pid = ExRedisPool.new()
 ```
@@ -60,6 +62,7 @@ Either the pid or the atom name can be used to reference the connection.
 ### query
 
 Using the pid from one of the new connections from above:
+
 ```
 iex(3)> {:ok, "OK"} = ExRedisPool.q(pid, ["SET", "chuck", "norris"])
 iex(4)> ExRedisPool.q(pid, ["GET", "chuck"])
@@ -69,6 +72,7 @@ iex(4)> ExRedisPool.q(pid, ["GET", "chuck"])
 ### query noreply
 
 Using the pid from one of the new connections from above:
+
 ```
 iex(5)> :ok = ExRedisPool.q_noreply(pid, ["SET", "chuck", "norris"])
 iex(7)> :timer.sleep(100)
@@ -79,6 +83,7 @@ iex(8)> ExRedisPool.q(pid, ["GET", "chuck"])
 ### query pipeline
 
 Using the pid from one of the new connections from above:
+
 ```
 iex(9)> [{:ok, "OK"}, {:ok, "OK"}] = ExRedisPool.qp(pid, [["SET", "chuck", "norris"], ["SET", "afraid", "nope"]])
 iex(10)> ExRedisPool.q(pid, ["GET", "chuck"])
@@ -90,6 +95,7 @@ iex(11)> ExRedisPool.q(pid, ["GET", "afraid"])
 ### query pipeline noreply
 
 Using the pid from one of the new connections from above:
+
 ```
 iex(12)> :ok = ExRedisPool.qp_noreply(pid, [["SET", "chuck", "norris"], ["SET", "afraid", "nope"]])
 iex(13)> :timer.sleep(100)
