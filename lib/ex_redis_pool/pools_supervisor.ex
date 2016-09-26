@@ -19,6 +19,7 @@ defmodule ExRedisPool.PoolsSupervisor do
   end
 
   def init(opts) do
+    Logger.debug("#{__MODULE__} starting up...")
     children = []
     supervise(children, strategy: :one_for_one)
   end

@@ -25,9 +25,10 @@ defmodule ExRedisPool do
     import Supervisor.Spec, warn: false
 
     children = [
-      # Define workers and child supervisors to be supervised
-      # worker(ExRedisPool.Worker, [arg1, arg2, arg3]),
-      supervisor(ExRedisPool.PoolsSupervisor, [])
+      # pools supervisor
+      supervisor(ExRedisPool.PoolsSupervisor, []),
+      # pool registry
+      worker(ExRedisPool.PoolsRegistry, [])
     ]
 
     # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html

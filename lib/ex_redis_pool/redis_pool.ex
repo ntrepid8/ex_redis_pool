@@ -3,28 +3,29 @@ defmodule ExRedisPool.RedisPool do
   Server for individual connection pools.
   """
   use GenServer
-  alias ExRedisPool.{PoolsSupervisor, RedisPoolWorker, HostUtil}
+  alias ExRedisPool.{PoolsSupervisor, RedisPoolWorker, HostUtil, PoolsRegistry}
   require Logger
 
   @noreply_timeout 300_000  # 5 minutes
 
   def start_link() do
-    GenServer.start_link(__MODULE__, [], [])
+    GenServer.start_link(__MODULE__, [nil, []], [])
   end
 
   def start_link(pool) when is_atom(pool) do
-    GenServer.start_link(__MODULE__, [], [name: pool])
+    GenServer.start_link(__MODULE__, [pool, []], [name: pool])
   end
 
   def start_link(opts) when is_list(opts) do
-    GenServer.start_link(__MODULE__, opts, [])
+    GenServer.start_link(__MODULE__, [nil, opts], [])
   end
 
   def start_link(pool, opts) when is_atom(pool) and is_list(opts) do
-    GenServer.start_link(__MODULE__, opts, [name: pool])
+    GenServer.start_link(__MODULE__, [pool, opts], [name: pool])
   end
 
-  def init(opts) do
+  def init([pool, opts]) do
+    Logger.debug("#{__MODULE__} pool=#{pool} starting up...")
     # startup for the synchronous pool
     ## resolve the host
     sync_pool_ref = {:global, :erlang.make_ref()}
@@ -42,7 +43,22 @@ defmodule ExRedisPool.RedisPool do
       reconnect_sleep: Keyword.get(opts, :reconnect_sleep, 100),
       connect_timeout: Keyword.get(opts, :connect_timeout, 5_000),
     ]
-    {:ok, _} = PoolsSupervisor.new_pool(sync_pool_ref, sync_pool_opts, sync_worker_opts)
+    # check for existing pool reconnect
+    {sync_pool_ref, sync_pool_status} =
+      case PoolsRegistry.lookup(pool, :synchronous, sync_pool_opts, sync_worker_opts) do
+        {:ok, pool_ref} ->
+          # pool already exists, use it rather than making a new one
+          Logger.debug("using existing pool_ref=#{inspect pool_ref} for pool=#{inspect pool} sync_pool")
+          {pool_ref, :existing}
+        {:error, _} ->
+          # pool does not already exist, make it
+          Logger.debug("create new pool pool_ref=#{inspect sync_pool_ref} for pool=#{inspect pool} sync_pool")
+          {:ok, _} = PoolsSupervisor.new_pool(sync_pool_ref, sync_pool_opts, sync_worker_opts)
+          {:ok, _} = PoolsRegistry.register(pool, :synchronous, sync_pool_opts, sync_worker_opts, sync_pool_ref)
+          {sync_pool_ref, :new}
+      end
+
+    # {:ok, _} = PoolsSupervisor.new_pool(sync_pool_ref, sync_pool_opts, sync_worker_opts)
 
     # startup for the asynchronous pool
     async_pool_ref = {:global, :erlang.make_ref()}
@@ -60,11 +76,28 @@ defmodule ExRedisPool.RedisPool do
       reconnect_sleep: Keyword.get(opts, :reconnect_sleep, 100),
       connect_timeout: Keyword.get(opts, :connect_timeout, 5_000),
     ]
-    {:ok, _} = PoolsSupervisor.new_pool(async_pool_ref, async_pool_opts, async_worker_opts)
+    # check for existing pool reconnect
+    {async_pool_ref, async_pool_status} =
+      case PoolsRegistry.lookup(pool, :asynchronous, async_pool_opts, async_worker_opts) do
+        {:ok, pool_ref} ->
+          # pool already exists, use it rather than making a new one
+          Logger.debug("using existing pool_ref=#{inspect pool_ref} for pool=#{inspect pool} async_pool")
+          {pool_ref, :existing}
+        {:error, _} ->
+          # pool does not already exist, make it
+          Logger.debug("create new pool pool_ref=#{inspect async_pool_ref} for pool=#{inspect pool} async_pool")
+          {:ok, _} = PoolsSupervisor.new_pool(async_pool_ref, async_pool_opts, async_worker_opts)
+          {:ok, _} = PoolsRegistry.register(pool, :asynchronous, async_pool_opts, async_worker_opts, async_pool_ref)
+          {async_pool_ref, :new}
+      end
+
+    # {:ok, _} = PoolsSupervisor.new_pool(async_pool_ref, async_pool_opts, async_worker_opts)
 
     state = %{
       sync_pool_ref: sync_pool_ref,
+      sync_pool_status: sync_pool_status,
       async_pool_ref: async_pool_ref,
+      async_pool_status: async_pool_status,
     }
     {:ok, state}
   end
@@ -85,6 +118,10 @@ defmodule ExRedisPool.RedisPool do
 
   def qp_noreply(pool, query_pipeline) do
     GenServer.cast(pool, {:handle_q_noreply, [query_pipeline]})
+  end
+
+  def stop(pool, timeout) do
+    GenServer.stop(pool, :normal, timeout)
   end
 
   # Callbacks
