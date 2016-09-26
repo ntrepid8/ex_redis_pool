@@ -106,3 +106,5 @@ iex(15)> ExRedisPool.q(pid, ["GET", "afraid"])
 ```
 
 ## TODO
+
+- add read-only backup connections for fail-over
