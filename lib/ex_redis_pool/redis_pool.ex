@@ -8,20 +8,22 @@ defmodule ExRedisPool.RedisPool do
 
   @noreply_timeout 300_000  # 5 minutes
 
-  def start_link() do
-    GenServer.start_link(__MODULE__, [nil, []], [])
-  end
-
-  def start_link(pool) when is_atom(pool) do
-    GenServer.start_link(__MODULE__, [pool, []], [name: pool])
-  end
-
+  def start_link(), do: start_link([])
+  def start_link(pool) when is_atom(pool), do: start_link(pool, [])
   def start_link(opts) when is_list(opts) do
     GenServer.start_link(__MODULE__, [nil, opts], [])
   end
-
   def start_link(pool, opts) when is_atom(pool) and is_list(opts) do
     GenServer.start_link(__MODULE__, [pool, opts], [name: pool])
+  end
+
+  def start(), do: start([])
+  def start(pool) when is_atom(pool), do: start(pool, [])
+  def start(opts) when is_list(opts) do
+    GenServer.start(__MODULE__, [nil, opts], [])
+  end
+  def start(pool, opts) when is_atom(pool) and is_list(opts) do
+    GenServer.start(__MODULE__, [pool, opts], [name: pool])
   end
 
   def init([pool, opts]) do
@@ -116,6 +118,9 @@ defmodule ExRedisPool.RedisPool do
     GenServer.cast(pool, {:handle_q_noreply, [query_pipeline]})
   end
 
+  def stop(pool) do
+    GenServer.stop(pool, :normal, 5_000)
+  end
   def stop(pool, timeout) do
     GenServer.stop(pool, :normal, timeout)
   end
