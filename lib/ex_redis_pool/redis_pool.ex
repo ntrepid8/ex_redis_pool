@@ -58,8 +58,6 @@ defmodule ExRedisPool.RedisPool do
           {sync_pool_ref, :new}
       end
 
-    # {:ok, _} = PoolsSupervisor.new_pool(sync_pool_ref, sync_pool_opts, sync_worker_opts)
-
     # startup for the asynchronous pool
     async_pool_ref = {:global, :erlang.make_ref()}
     async_pool_opts = [
@@ -90,8 +88,6 @@ defmodule ExRedisPool.RedisPool do
           {:ok, _} = PoolsRegistry.register(pool, :asynchronous, async_pool_opts, async_worker_opts, async_pool_ref)
           {async_pool_ref, :new}
       end
-
-    # {:ok, _} = PoolsSupervisor.new_pool(async_pool_ref, async_pool_opts, async_worker_opts)
 
     state = %{
       sync_pool_ref: sync_pool_ref,
