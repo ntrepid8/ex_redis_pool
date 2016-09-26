@@ -107,4 +107,4 @@ iex(15)> ExRedisPool.q(pid, ["GET", "afraid"])
 
 ## TODO
 
-- automatic re-association with a connection pool after a crash
+- add start_link function to run the `ExRedisPool.RedisPool` module in a different supervision tree
