@@ -38,7 +38,7 @@ defmodule ExRedisPool do
   end
 
   @doc """
-  Start a new redis connection pool.
+  Start a new redis connection pool within ExRedisPools own supervision tree..
   """
   @spec new(pool, [redis_pool_option]) :: {:ok, pool} | {:error, reason}
   def new(pool, opts) when is_atom(pool) and is_list(opts) do
@@ -60,12 +60,41 @@ defmodule ExRedisPool do
     pid
   end
 
+  @spec new(pool) :: {:ok, pool} | {:error, reason}
   def new(pool) when is_atom(pool) do
     new(pool, [])
   end
 
+  @spec new() :: {:ok, pool} | {:error, reason}
   def new() do
     new([])
+  end
+
+  @doc """
+  Start a new redis connection pool client linked to the caller.
+  """
+  @spec start_client(pool, [redis_pool_option]) :: {:ok, pool} | {:error, reason}
+  def start_client(pool, opts) when is_atom(pool) and is_list(opts) do
+    ExRedisPool.RedisPool.start_link(pool, opts)
+  end
+
+  @spec start_client([redis_pool_option]) :: {:ok, pool} | {:error, reason}
+  def start_client(opts) when is_list(opts) do
+    ExRedisPool.RedisPool.start_link(opts)
+  end
+
+  @spec start_client(pool) :: {:ok, pool} | {:error, reason}
+  def start_client(pool) when is_atom(pool) do
+    start_client(pool, [])
+  end
+
+  @spec start_client() :: {:ok, pool} | {:error, reason}
+  def start_client() do
+    start_client([])
+  end
+
+  def stop_client(pool, timeout \\ @timeout) do
+    ExRedisPool.RedisPool.stop(pool, timeout)
   end
 
   @doc """
