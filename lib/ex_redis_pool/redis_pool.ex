@@ -115,7 +115,7 @@ defmodule ExRedisPool.RedisPool do
   end
 
   def qp_noreply(pool, query_pipeline) do
-    GenServer.cast(pool, {:handle_q_noreply, [query_pipeline]})
+    GenServer.cast(pool, {:handle_qp_noreply, [query_pipeline]})
   end
 
   def stop(pool) do
@@ -159,7 +159,7 @@ defmodule ExRedisPool.RedisPool do
   def handle_cast({:handle_qp_noreply, [query_pipeline]}, state) do
     spawn(fn -> :poolboy.transaction(
       state.async_pool_ref,
-      fn(pid) -> RedisPoolWorker.qp(pid, query_pipeline) end,
+      fn(pid) -> RedisPoolWorker.qp_noreply(pid, query_pipeline) end,
       @noreply_timeout)
     end)
     {:noreply, state}
