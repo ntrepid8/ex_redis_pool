@@ -22,27 +22,24 @@ defmodule ExRedisPool.RedisPoolWorker do
   # API
 
   def q(pid, query, from, timeout) do
-    Logger.debug("query: #{inspect query}")
     GenServer.call(pid, {:handle_q, [query, from, timeout]}, timeout)
   end
 
   def q_noreply(pid, query) do
-    Logger.debug("query: #{inspect query}")
     GenServer.call(pid, {:handle_q_noreply, [query]}, @noreply_timeout)
   end
 
   def qp(pid, query_pipeline, from, timeout) do
-    Logger.debug("query_pipeline: #{inspect query_pipeline}")
     GenServer.call(pid, {:handle_qp, [query_pipeline, from, timeout]}, timeout)
   end
 
   def qp_noreply(pid, query_pipeline) do
-    Logger.debug("query_pipeline: #{inspect query_pipeline}")
     GenServer.call(pid, {:handle_qp_noreply, [query_pipeline]}, @noreply_timeout)
   end
 
   # Callbacks
   def handle_call({:handle_q, [query, from, timeout]}, _from, state) do
+    Logger.debug("query: #{inspect query}")
     # run query
     result = :eredis.q(state[:client], query, timeout)
     # reply directly to original process
@@ -51,6 +48,7 @@ defmodule ExRedisPool.RedisPoolWorker do
   end
 
   def handle_call({:handle_q_noreply, [query]}, _from, state) do
+    Logger.debug("query (noreply): #{inspect query}")
     # run query
     :eredis.q(state[:client], query, @noreply_timeout)
     {:reply, :ok, state}
@@ -66,7 +64,7 @@ defmodule ExRedisPool.RedisPoolWorker do
   end
 
   def handle_call({:handle_qp_noreply, [query_pipeline]}, _from, state) do
-    Logger.debug("query_pipeline: #{inspect query_pipeline}")
+    Logger.debug("query_pipeline (noreply): #{inspect query_pipeline}")
     # run query_pipeline
     :eredis.qp(state[:client], query_pipeline, @noreply_timeout)
     {:reply, :ok, state}
