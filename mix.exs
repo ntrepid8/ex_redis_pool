@@ -9,7 +9,14 @@ defmodule ExRedisPool.Mixfile do
      start_permanent: Mix.env == :prod,
      deps: deps(),
      description: description(),
-     package: package()]
+     package: package(),
+
+     # docs
+     name: "ExRedisPool",
+     source_url: "https://github.com/ntrepid8/ex_redis_pool",
+     docs: [cannonical: "https://hexdocs.com/ex_redis_pool",
+            extras: ["README.md"]]
+   ]
   end
 
   def application do
@@ -25,6 +32,7 @@ defmodule ExRedisPool.Mixfile do
     [
       {:eredis, "~> 1.0"},
       {:poolboy, "~> 1.5"},
+      {:ex_doc, "~> 0.13", only: :dev}
     ]
   end
 
