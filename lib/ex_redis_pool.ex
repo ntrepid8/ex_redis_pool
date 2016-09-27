@@ -100,9 +100,20 @@ defmodule ExRedisPool do
   @doc """
   Run a synchronous redis query.
   """
-  @spec q(atom, redis_query, integer) :: [redis_result] | {:error, reason}
+  @spec q(atom, redis_query, integer) :: {:ok, redis_result} | {:error, reason}
   def q(pool, query, timeout \\ @timeout) do
     ExRedisPool.RedisPool.q(pool, query, timeout)
+  end
+
+  @doc """
+  Like q/3 except returns the result directly or raises an error.
+  """
+  @spec q!(atom, redis_query, integer) :: redis_result | no_return
+  def q!(pool, query, timeout \\ @timeout) do
+    case ExRedisPool.RedisPool.q(pool, query, timeout) do
+      {:error, reason} -> raise reason
+      {:ok, result}    -> result
+    end
   end
 
   @doc """
@@ -112,7 +123,7 @@ defmodule ExRedisPool do
   synchronous queries so bulk asynchronous queries do not degrade quality of service
   for synchronous queries.
   """
-  @spec q_noreply(atom, redis_query) :: [redis_result] | {:error, reason}
+  @spec q_noreply(atom, redis_query) :: :ok | {:error, reason}
   def q_noreply(pool, query) do
     ExRedisPool.RedisPool.q_noreply(pool, query)
   end
@@ -120,9 +131,20 @@ defmodule ExRedisPool do
   @doc """
   Run a synchronous query pipeline.
   """
-  @spec qp(atom, [redis_query], integer) :: [redis_result] | {:error, reason}
+  @spec qp(atom, [redis_query], integer) :: [{:ok, redis_result}] | {:error, reason}
   def qp(pool, query_pipeline, timeout \\ @timeout) do
     ExRedisPool.RedisPool.qp(pool, query_pipeline, timeout)
+  end
+
+  @doc """
+  Like qp/3 except returns the result directly or raises an error.
+  """
+  @spec qp!(atom, [redis_query], integer) :: [redis_result] | no_return
+  def qp!(pool, query_pipeline, timeout \\ @timeout) do
+    case ExRedisPool.RedisPool.qp(pool, query_pipeline, timeout) do
+      {:error, reason} -> raise reason
+      results          -> Enum.map(results, fn({:ok, result}) -> result end)
+    end
   end
 
   @doc """
@@ -132,7 +154,7 @@ defmodule ExRedisPool do
   synchronous query pipelines so bulk asynchronous query pipelines do not degrade quality of service
   for synchronous query pipelines.
   """
-  @spec qp_noreply(atom, [redis_query]) :: [redis_result] | {:error, reason}
+  @spec qp_noreply(atom, [redis_query]) :: :ok | {:error, reason}
   def qp_noreply(pool, query_pipeline) do
     ExRedisPool.RedisPool.qp_noreply(pool, query_pipeline)
   end
