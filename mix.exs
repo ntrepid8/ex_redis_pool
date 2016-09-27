@@ -36,7 +36,7 @@ defmodule ExRedisPool.Mixfile do
 
   defp package do
     [name: :ex_redis_pool,
-     files: ["lib", "priv", "mix.exs", "README.md", "LICENSE"],
+     files: ["lib", "mix.exs", "README.md", "LICENSE"],
      maintainers: ["Josh Austin"],
      licenses: ["MIT"],
      links: %{"GitHub" => "https://github.com/ntrepid8/ex_redis_pool"}]
