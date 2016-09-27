@@ -18,6 +18,18 @@ defmodule ExRedisPoolTest do
     assert result == "1"
   end
 
+  test "ExRedisPool.q!/2 [basic operation]" do
+    pid = ExRedisPool.new()
+    assert is_pid(pid) == true
+    key = "test_#{:crypto.rand_uniform(0, 1_000_000_000)}"
+    val = "#{:crypto.rand_uniform(0, 1_000_000_000)}"
+    "OK" = ExRedisPool.q!(pid, ["SET", key, val])
+    result = ExRedisPool.q!(pid, ["GET", key])
+    assert result == val
+    result = ExRedisPool.q!(pid, ["DEL", key])
+    assert result == "1"
+  end
+
   test "ExRedisPool.qp/2 [basic operation]" do
     pid = ExRedisPool.new(:erpt2)
     assert is_pid(pid) == true
@@ -57,10 +69,52 @@ defmodule ExRedisPoolTest do
     ]
   end
 
+  test "ExRedisPool.qp!/2 [basic operation]" do
+    pid = ExRedisPool.new()
+    assert is_pid(pid) == true
+    key1 = "test_#{:crypto.rand_uniform(0, 1_000_000_000)}"
+    key2 = "test_#{:crypto.rand_uniform(0, 1_000_000_000)}"
+    val1 = "#{:crypto.rand_uniform(0, 1_000_000_000)}"
+    val2 = "#{:crypto.rand_uniform(0, 1_000_000_000)}"
+
+    query_pipeline1 = [
+      ["SET", key1, val1],
+      ["SET", key2, val2],
+    ]
+    resp1 = ExRedisPool.qp!(pid, query_pipeline1)
+    assert resp1 == [
+      "OK",
+      "OK",
+    ]
+
+    query_pipeline2 = [
+      ["GET", key1],
+      ["GET", key2],
+    ]
+    resp2 = ExRedisPool.qp!(pid, query_pipeline2)
+    assert resp2 == [
+      val1,
+      val2,
+    ]
+
+    query_pipeline3 = [
+      ["DEL", key1],
+      ["DEL", key2],
+    ]
+    resp3 = ExRedisPool.qp!(pid, query_pipeline3)
+    assert resp3 == [
+      "1",
+      "1",
+    ]
+  end
+
   test "ExRedisPool.new/2 [start more than once process]" do
     pid1 = ExRedisPool.new(:erpt3)
+    assert is_pid(pid1) == true
     pid2 = ExRedisPool.new(:erpt4)
+    assert is_pid(pid2) == true
     pid3 = ExRedisPool.new(:erpt5)
+    assert is_pid(pid3) == true
   end
 
   test "ExRedisPool.q/2 [pid only]" do
