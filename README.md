@@ -2,6 +2,8 @@
 
 A Elixir Redis client with connection pools.
 
+[![Build Status](https://travis-ci.org/ntrepid8/ex_redis_pool.svg?branch=master)](https://travis-ci.org/ntrepid8/ex_redis_pool)
+
 ## Features
 
 ExRedisPool implements several features with a slightly different twist than
