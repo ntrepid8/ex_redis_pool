@@ -52,23 +52,25 @@ defmodule ExRedisPool.Shard do
   Takes a list of connection options for each shard. Each shard is assigned an
   index based on the order of the connection options.
   """
-  @spec new([redis_pool_options]) :: {:ok, pool} | {:error, reason}
+  @spec new([redis_pool_options]) :: pid
   def new(shard_opts_list) do
     shards = start_shards(shard_opts_list)
     worker_opts = [id: :erlang.make_ref()]
     {:ok, child} =
       Supervisor.start_child(__MODULE__, worker(ExRedisPool.ShardMapper, [shards], worker_opts))
+    child
   end
 
   @doc """
   Like `new/1` but with the option to give an atom name.
   """
-  @spec new(mapper, [redis_pool_options]) :: {:ok, pool} | {:error, reason}
+  @spec new(mapper, [redis_pool_options]) :: pid
   def new(mapper, shard_opts_list) do
     shards = start_shards(shard_opts_list)
     worker_opts = [id: :erlang.make_ref()]
     {:ok, child} =
       Supervisor.start_child(__MODULE__, worker(ExRedisPool.ShardMapper, [mapper, shards], worker_opts))
+    child
   end
 
   @doc """

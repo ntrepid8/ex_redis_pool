@@ -43,7 +43,7 @@ defmodule ExRedisPool do
   @doc """
   Start a new redis connection pool within ExRedisPools own supervision tree..
   """
-  @spec new(pool, [redis_pool_option]) :: {:ok, pool} | {:error, reason}
+  @spec new(pool, [redis_pool_option]) :: pid
   def new(pool, opts) when is_atom(pool) and is_list(opts) do
     worker_opts = [
       id: :erlang.make_ref()
@@ -53,7 +53,7 @@ defmodule ExRedisPool do
     pid
   end
 
-  @spec new([redis_pool_option]) :: {:ok, pool} | {:error, reason}
+  @spec new([redis_pool_option]) :: pid
   def new(opts) when is_list(opts) do
     worker_opts = [
       id: :erlang.make_ref()
@@ -63,12 +63,12 @@ defmodule ExRedisPool do
     pid
   end
 
-  @spec new(pool) :: {:ok, pool} | {:error, reason}
+  @spec new(pool) :: pid
   def new(pool) when is_atom(pool) do
     new(pool, [])
   end
 
-  @spec new() :: {:ok, pool} | {:error, reason}
+  @spec new() :: pid
   def new() do
     new([])
   end

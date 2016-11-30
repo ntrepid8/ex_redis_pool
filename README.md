@@ -36,7 +36,7 @@ If [available in Hex](https://hex.pm/docs/publish), the package can be installed
   1. Add ex_redis_pool to your list of dependencies in `mix.exs`:
 
         def deps do
-          [{:ex_redis_pool, "~> 0.1.0"}]
+          [{:ex_redis_pool, "~> 0.1.1"}]
         end
 
   2. Ensure ex_redis_pool is started before your application:
@@ -117,8 +117,8 @@ queries are mapped to the appropriate shard based on the given `shard_key` like 
 ```elixir
 iex(1)> shard_opts_list = [[database: 10], [database: 11], [database: 12], [database: 13]]
 [[database: 10], [database: 11], [database: 12], [database: 13]]
-iex(2)> {:ok, pid} = ExRedisPool.Shard.new(shard_opts_list)
-{:ok, #PID<0.575.0>}
+iex(2)> pid = ExRedisPool.Shard.new(shard_opts_list)
+#PID<0.575.0>
 iex(3)> ExRedisPool.Shard.q(pid, ["SET", "chuck", "norris"], "texas")
 {:ok, "OK"}
 iex(4)> ExRedisPool.Shard.q(pid, ["GET", "chuck"], "texas")
