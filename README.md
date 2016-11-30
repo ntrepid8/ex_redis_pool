@@ -49,13 +49,13 @@ If [available in Hex](https://hex.pm/docs/publish), the package can be installed
 
 Start a new connection to the default Redis instance on localhost with a name:
 
-```
+```elixir
 iex(1)> pid = ExRedisPool.new(:redis_pool)
 ```
 
 Or start a new connection to the default Redis instance on localhost without a name, just using the pid:
 
-```
+```elixir
 iex(2)> pid = ExRedisPool.new()
 ```
 
@@ -65,7 +65,7 @@ Either the pid or the atom name can be used to reference the connection.
 
 Using the pid from one of the new connections from above:
 
-```
+```elixir
 iex(3)> {:ok, "OK"} = ExRedisPool.q(pid, ["SET", "chuck", "norris"])
 iex(4)> ExRedisPool.q(pid, ["GET", "chuck"])
 "norris"
@@ -75,7 +75,7 @@ iex(4)> ExRedisPool.q(pid, ["GET", "chuck"])
 
 Using the pid from one of the new connections from above:
 
-```
+```elixir
 iex(5)> :ok = ExRedisPool.q_noreply(pid, ["SET", "chuck", "norris"])
 iex(7)> :timer.sleep(100)
 iex(8)> ExRedisPool.q(pid, ["GET", "chuck"])
@@ -86,7 +86,7 @@ iex(8)> ExRedisPool.q(pid, ["GET", "chuck"])
 
 Using the pid from one of the new connections from above:
 
-```
+```elixir
 iex(9)> [{:ok, "OK"}, {:ok, "OK"}] = ExRedisPool.qp(pid, [["SET", "chuck", "norris"], ["SET", "afraid", "nope"]])
 iex(10)> ExRedisPool.q(pid, ["GET", "chuck"])
 "norris"
@@ -98,7 +98,7 @@ iex(11)> ExRedisPool.q(pid, ["GET", "afraid"])
 
 Using the pid from one of the new connections from above:
 
-```
+```elixir
 iex(12)> :ok = ExRedisPool.qp_noreply(pid, [["SET", "chuck", "norris"], ["SET", "afraid", "nope"]])
 iex(13)> :timer.sleep(100)
 iex(14)> ExRedisPool.q(pid, ["GET", "chuck"])
@@ -114,7 +114,7 @@ instance of Redis can be important for performance in some contexts. The `Shard`
 help construct several connection pools, each able to take their own connection options. Then
 queries are mapped to the appropriate shard based on the given `shard_key` like this:
 
-```
+```elixir
 iex(1)> shard_opts_list = [[database: 10], [database: 11], [database: 12], [database: 13]]
 [[database: 10], [database: 11], [database: 12], [database: 13]]
 iex(2)> {:ok, pid} = ExRedisPool.Shard.new(shard_opts_list)
@@ -136,7 +136,7 @@ Also, if we try to query with a different `shard_key` it's possible the query wi
 map to another shard. It's important to have a sound shard key strategy before attempting
 to shard your Redis cluster.
 
-```
+```elixir
 iex(6)> ExRedisPool.Shard.q(pid, ["GET", "chuck"], "oklahoma")  
 {:ok, :undefined}
 ```
