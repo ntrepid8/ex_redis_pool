@@ -2,8 +2,8 @@ defmodule ExRedisPool do
   use Application
   import Supervisor.Spec, warn: false
 
-  @type reason :: binary
   @type pool :: atom | pid
+  @type reason :: binary
   @type reconnect_sleep :: :no_reconnect | integer
   @type redis_pool_option :: {:host, binary} |
                              {:port, integer} |
@@ -14,6 +14,7 @@ defmodule ExRedisPool do
                              {:sync_pool_max_overflow, integer} |
                              {:async_pool_size, integer} |
                              {:async_pool_max_overflow, integer}
+  @type redis_pool_options :: [redis_pool_option]
   @type redis_query :: [binary]
   @type redis_result :: binary | :undefined
 
@@ -28,7 +29,9 @@ defmodule ExRedisPool do
       # pools supervisor
       supervisor(ExRedisPool.PoolsSupervisor, []),
       # pool registry
-      worker(ExRedisPool.PoolsRegistry, [])
+      worker(ExRedisPool.PoolsRegistry, []),
+      # shard mapper supervisor
+      supervisor(ExRedisPool.Shard, []),
     ]
 
     # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html
@@ -100,7 +103,7 @@ defmodule ExRedisPool do
   @doc """
   Run a synchronous redis query.
   """
-  @spec q(atom, redis_query, integer) :: {:ok, redis_result} | {:error, reason}
+  @spec q(pool, redis_query, integer) :: {:ok, redis_result} | {:error, reason}
   def q(pool, query, timeout \\ @timeout) do
     ExRedisPool.RedisPool.q(pool, query, timeout)
   end
@@ -108,7 +111,7 @@ defmodule ExRedisPool do
   @doc """
   Like q/3 except returns the result directly or raises an error.
   """
-  @spec q!(atom, redis_query, integer) :: redis_result | no_return
+  @spec q!(pool, redis_query, integer) :: redis_result | no_return
   def q!(pool, query, timeout \\ @timeout) do
     case ExRedisPool.RedisPool.q(pool, query, timeout) do
       {:error, reason} -> raise reason
@@ -123,7 +126,7 @@ defmodule ExRedisPool do
   synchronous queries so bulk asynchronous queries do not degrade quality of service
   for synchronous queries.
   """
-  @spec q_noreply(atom, redis_query) :: :ok | {:error, reason}
+  @spec q_noreply(pool, redis_query) :: :ok | {:error, reason}
   def q_noreply(pool, query) do
     ExRedisPool.RedisPool.q_noreply(pool, query)
   end
@@ -139,7 +142,7 @@ defmodule ExRedisPool do
   @doc """
   Like qp/3 except returns the result directly or raises an error.
   """
-  @spec qp!(atom, [redis_query], integer) :: [redis_result] | no_return
+  @spec qp!(pool, [redis_query], integer) :: [redis_result] | no_return
   def qp!(pool, query_pipeline, timeout \\ @timeout) do
     case ExRedisPool.RedisPool.qp(pool, query_pipeline, timeout) do
       {:error, reason} -> raise reason
@@ -154,7 +157,7 @@ defmodule ExRedisPool do
   synchronous query pipelines so bulk asynchronous query pipelines do not degrade quality of service
   for synchronous query pipelines.
   """
-  @spec qp_noreply(atom, [redis_query]) :: :ok | {:error, reason}
+  @spec qp_noreply(pool, [redis_query]) :: :ok | {:error, reason}
   def qp_noreply(pool, query_pipeline) do
     ExRedisPool.RedisPool.qp_noreply(pool, query_pipeline)
   end
