@@ -10,7 +10,8 @@ defmodule ExRedisPool.ShardMapperTest do
       [database: 13],
     ]
 
-    {:ok, pid} = ExRedisPool.Shard.new(shard_opts_list)
+    pid = ExRedisPool.Shard.new(shard_opts_list)
+    assert is_pid(pid)
 
     # run a few iterations to make sure we distribute across the shards
     for _ <- 0..100 do
@@ -37,7 +38,8 @@ defmodule ExRedisPool.ShardMapperTest do
       [database: 13],
     ]
 
-    {:ok, pid} = ExRedisPool.Shard.new(shard_opts_list)
+    pid = ExRedisPool.Shard.new(shard_opts_list)
+    assert is_pid(pid)
 
     # run a few iterations to make sure we distribute across the shards
     for _ <- 0..100 do
@@ -60,7 +62,8 @@ defmodule ExRedisPool.ShardMapperTest do
       [database: 15],
     ]
 
-    {:ok, pid} = ExRedisPool.Shard.new(:test_shard_map, shard_opts_list)
+    pid = ExRedisPool.Shard.new(:test_shard_map, shard_opts_list)
+    assert is_pid(pid)
 
     # run a few iterations to make sure we distribute across the shards
     for _ <- 0..10 do
