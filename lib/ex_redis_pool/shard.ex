@@ -34,6 +34,8 @@ defmodule ExRedisPool.Shard do
   @type redis_query :: [binary]
   @type redis_result :: binary | :undefined
 
+  @timeout 5_000
+
   def start_link(opts \\ []) do
     Supervisor.start_link(__MODULE__, opts, [name: __MODULE__])
   end
