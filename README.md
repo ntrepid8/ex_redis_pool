@@ -107,6 +107,40 @@ iex(15)> ExRedisPool.q(pid, ["GET", "afraid"])
 "nope"
 ```
 
+## Sharded Pools
+
+Shard mapping was added in version `0.1.0`. Redis is single threaded, and using more than one
+instance of Redis can be important for performance in some contexts. The `Shard` module will
+help construct several connection pools, each able to take their own connection options. Then
+queries are mapped to the appropriate shard based on the given `shard_key` like this:
+
+```
+iex(1)> shard_opts_list = [[database: 10], [database: 11], [database: 12], [database: 13]]
+[[database: 10], [database: 11], [database: 12], [database: 13]]
+iex(2)> {:ok, pid} = ExRedisPool.Shard.new(shard_opts_list)
+{:ok, #PID<0.575.0>}
+iex(3)> ExRedisPool.Shard.q(pid, ["SET", "chuck", "norris"], "texas")
+{:ok, "OK"}
+iex(4)> ExRedisPool.Shard.q(pid, ["GET", "chuck"], "texas")
+{:ok, "norris"}
+```
+
+In the above example our workload will be mapped onto the 4 instances of Redis we supplied
+connection options for.
+
+Note: in this example and in our tests we create shards by using a different database in the same
+Redis instance. This allows us to simulate sharding for tests, but you will likely want to run
+several Redis instances, perhaps on different ports or even different hosts to get the best performance.
+
+Also, if we try to query with a different `shard_key` it's possible the query will
+map to another shard. It's important to have a sound shard key strategy before attempting
+to shard your Redis cluster.
+
+```
+iex(6)> ExRedisPool.Shard.q(pid, ["GET", "chuck"], "oklahoma")  
+{:ok, :undefined}
+```
+
 ## TODO
 
 - add read-only backup connections for fail-over
