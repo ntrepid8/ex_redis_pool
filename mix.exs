@@ -3,7 +3,7 @@ defmodule ExRedisPool.Mixfile do
 
   def project do
     [app: :ex_redis_pool,
-     version: "0.1.1",
+     version: "0.1.2",
      elixir: "~> 1.2",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
@@ -38,7 +38,7 @@ defmodule ExRedisPool.Mixfile do
 
   defp description do
     """
-    Elixir Redis client with connection pools and hostname resolution.
+    Elixir Redis client with sync/async connection pools, sharding, and one-time hostname resolution.
     """
   end
 
