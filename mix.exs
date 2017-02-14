@@ -3,7 +3,7 @@ defmodule ExRedisPool.Mixfile do
 
   def project do
     [app: :ex_redis_pool,
-     version: "0.1.2",
+     version: "0.2.0",
      elixir: "~> 1.2",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
@@ -15,7 +15,7 @@ defmodule ExRedisPool.Mixfile do
      name: "ExRedisPool",
      source_url: "https://github.com/ntrepid8/ex_redis_pool",
      docs: [cannonical: "https://hexdocs.com/ex_redis_pool",
-            extras: ["README.md"]]
+            extras: ["README.md", "CHANGELOG.md"]]
    ]
   end
 
@@ -32,7 +32,7 @@ defmodule ExRedisPool.Mixfile do
     [
       {:eredis, "~> 1.0"},
       {:poolboy, "~> 1.5"},
-      {:ex_doc, "~> 0.13", only: :dev}
+      {:ex_doc, "~> 0.14", only: :dev}
     ]
   end
 
@@ -44,7 +44,7 @@ defmodule ExRedisPool.Mixfile do
 
   defp package do
     [name: :ex_redis_pool,
-     files: ["lib", "mix.exs", "README.md", "LICENSE"],
+     files: ["lib", "mix.exs", "README.md", "LICENSE", "CHANGELOG.md"],
      maintainers: ["Josh Austin"],
      licenses: ["MIT"],
      links: %{"GitHub" => "https://github.com/ntrepid8/ex_redis_pool"}]

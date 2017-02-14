@@ -6,7 +6,19 @@ defmodule ExRedisPool.RedisPool do
   alias ExRedisPool.{PoolsSupervisor, RedisPoolWorker, HostUtil, PoolsRegistry}
   require Logger
 
-  @noreply_timeout 300_000  # 5 minutes
+  defstruct [
+    # message callback timeout
+    msg_timeout: 5_000,
+
+    # query noreply timeout
+    noreply_timeout: 300_000,
+
+    # pool data
+    sync_pool_ref:     nil,
+    sync_pool_status:  nil,
+    async_pool_ref:    nil,
+    async_pool_status: nil,
+  ]
 
   def start_link(), do: start_link([])
   def start_link(pool) when is_atom(pool), do: start_link(pool, [])
@@ -44,6 +56,7 @@ defmodule ExRedisPool.RedisPool do
       password:        Keyword.get(opts, :password, ""),
       reconnect_sleep: Keyword.get(opts, :reconnect_sleep, 100),
       connect_timeout: Keyword.get(opts, :connect_timeout, 5_000),
+      recycle_count:   Keyword.get(opts, :recycle_count, 10_000),
     ]
     # check for existing pool reconnect
     {sync_pool_ref, sync_pool_status} =
@@ -75,6 +88,7 @@ defmodule ExRedisPool.RedisPool do
       password:        Keyword.get(opts, :password, ""),
       reconnect_sleep: Keyword.get(opts, :reconnect_sleep, 100),
       connect_timeout: Keyword.get(opts, :connect_timeout, 5_000),
+      recycle_count:   Keyword.get(opts, :recycle_count, 10_000),
     ]
     # check for existing pool reconnect
     {async_pool_ref, async_pool_status} =
@@ -91,13 +105,19 @@ defmodule ExRedisPool.RedisPool do
           {async_pool_ref, :new}
       end
 
-    state = %{
-      sync_pool_ref: sync_pool_ref,
-      sync_pool_status: sync_pool_status,
-      async_pool_ref: async_pool_ref,
+    # initialize state
+    state = struct(%__MODULE__{}, opts)
+
+    # update state
+    state = struct(state, %{
+      sync_pool_ref:     sync_pool_ref,
+      sync_pool_status:  sync_pool_status,
+      async_pool_ref:    async_pool_ref,
       async_pool_status: async_pool_status,
-    }
-    {:ok, state}
+    })
+
+    # finish init
+    {:ok, state, state.msg_timeout}
   end
 
   # API
@@ -134,16 +154,7 @@ defmodule ExRedisPool.RedisPool do
       fn(pid) -> RedisPoolWorker.q(pid, query, from, timeout) end,
       timeout)
     end)
-    {:noreply, state}
-  end
-
-  def handle_cast({:handle_q_noreply, [query]}, state) do
-    spawn(fn -> :poolboy.transaction(
-      state.async_pool_ref,
-      fn(pid) -> RedisPoolWorker.q_noreply(pid, query) end,
-      @noreply_timeout)
-    end)
-    {:noreply, state}
+    {:noreply, state, state.msg_timeout}
   end
 
   def handle_call({:handle_qp, [query_pipeline, timeout]}, from, state) do
@@ -153,16 +164,36 @@ defmodule ExRedisPool.RedisPool do
       fn(pid) -> RedisPoolWorker.qp(pid, query_pipeline, from, timeout) end,
       timeout)
     end)
-    {:noreply, state}
+    {:noreply, state, state.msg_timeout}
+  end
+
+  def handle_cast({:handle_q_noreply, [query]}, state) do
+    spawn(fn -> :poolboy.transaction(
+      state.async_pool_ref,
+      fn(pid) -> RedisPoolWorker.q_noreply(pid, query) end,
+      state.noreply_timeout)
+    end)
+    {:noreply, state, state.msg_timeout}
   end
 
   def handle_cast({:handle_qp_noreply, [query_pipeline]}, state) do
     spawn(fn -> :poolboy.transaction(
       state.async_pool_ref,
       fn(pid) -> RedisPoolWorker.qp_noreply(pid, query_pipeline) end,
-      @noreply_timeout)
+      state.noreply_timeout)
     end)
-    {:noreply, state}
+    {:noreply, state, state.msg_timeout}
+  end
+
+  def handle_info(:timeout, state) do
+    # process has become idle, hibernate
+    Logger.debug("#{__MODULE__} hibernating...")
+    {:noreply, state, :hibernate}
+  end
+
+  def handle_info(msg, state) do
+    Logger.warn("unhandled_message: #{inspect msg}")
+    {:noreply, state, state.msg_timeout}
   end
 
   # Helpers

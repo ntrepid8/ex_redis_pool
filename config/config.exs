@@ -27,4 +27,12 @@ use Mix.Config
 # Configuration from the imported file will override the ones defined
 # here (which is why it is important to import them last).
 #
+
+config :logger, :console,
+  utc_log: true,
+  level: :info,
+  format: "$date $time [$level] (ExRedisPool) $message\n"
+
 import_config "#{Mix.env}.exs"
+
+# config :logger, format: "$time $metadata[$level] $levelpad$message\n"

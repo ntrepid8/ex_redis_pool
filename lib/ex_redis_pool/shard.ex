@@ -14,7 +14,6 @@ defmodule ExRedisPool.Shard do
   """
   import Supervisor.Spec, warn: false
   use Supervisor
-  alias ExRedisPool.RedisPool
   require Logger
 
   @type mapper :: atom | pid
@@ -40,7 +39,7 @@ defmodule ExRedisPool.Shard do
     Supervisor.start_link(__MODULE__, opts, [name: __MODULE__])
   end
 
-  def init(opts) do
+  def init(_opts) do
     Logger.debug("#{__MODULE__} starting up...")
     children = []
     supervise(children, strategy: :one_for_one)
@@ -101,7 +100,7 @@ defmodule ExRedisPool.Shard do
   """
   @spec q_noreply(mapper, redis_query, binary) :: :ok | {:error, reason}
   def q_noreply(mapper, query, shard_key) do
-    ExRedisPool.ShardMapper.q_noreply(mapper, query)
+    ExRedisPool.ShardMapper.q_noreply(mapper, query, shard_key)
   end
 
   @doc """
@@ -117,7 +116,7 @@ defmodule ExRedisPool.Shard do
   """
   @spec qp!(mapper, [redis_query], binary, integer) :: [redis_result] | no_return
   def qp!(mapper, query_pipeline, shard_key, timeout \\ @timeout) do
-    case ExRedisPool.ShardMapper.qp(mapper, query_pipeline, timeout) do
+    case ExRedisPool.ShardMapper.qp(mapper, query_pipeline, shard_key, timeout) do
       {:error, reason} -> raise reason
       results          -> Enum.map(results, fn({:ok, result}) -> result end)
     end
@@ -139,7 +138,7 @@ defmodule ExRedisPool.Shard do
 
   defp start_shards(shard_opts_list) do
     Enum.map(shard_opts_list, fn(shard_opts) ->
-      {:ok, pid} = ExRedisPool.RedisPool.start_link(shard_opts)
+      {:ok, _pid} = ExRedisPool.RedisPool.start_link(shard_opts)
     end)
     |> Enum.map(fn({:ok, pid}) -> pid end)
   end

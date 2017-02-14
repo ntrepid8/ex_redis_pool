@@ -5,15 +5,26 @@ defmodule ExRedisPool.PoolsRegistry do
   use GenServer
   require Logger
 
+  defstruct [
+    # registered pools
+    pools: %{},
+
+    # msg timeout
+    msg_timeout: 15_000,
+  ]
+
   def start_link(opts \\ []) do
     GenServer.start_link(__MODULE__, opts, [name: __MODULE__])
   end
 
   def init(opts) do
     Logger.debug("#{__MODULE__} starting up...")
-    {:ok, %{
-      pools: %{}
-      }}
+
+    # initialize state, pull in any opts
+    state = struct(%__MODULE__{}, opts)
+
+    # finish init
+    {:ok, state, state.msg_timeout}
   end
 
   # API
@@ -36,7 +47,7 @@ defmodule ExRedisPool.PoolsRegistry do
         nil        -> {:error, nil}
         pool_ref   -> {:ok, pool_ref}
       end
-    {:reply, resp, state}
+    {:reply, resp, state, state.msg_timeout}
   end
 
   def handle_call({:register, [pool, pool_type, pool_opts, worker_opts, pool_ref]}, _from, state) do
@@ -46,9 +57,21 @@ defmodule ExRedisPool.PoolsRegistry do
         true ->
           {{:error, :pool_already_exists}, state}
         false ->
-          {{:ok, :pool_regsitered}, %{state|pools: Map.put(state.pools, hash_key, pool_ref)}}
+          state = struct(state, %{pools: Map.put(state.pools, hash_key, pool_ref)})
+          {{:ok, :pool_regsitered}, state}
       end
-    {:reply, resp, state}
+    {:reply, resp, state, state.msg_timeout}
+  end
+
+  def handle_info(:timeout, state) do
+    # process has become idle, hibernate
+    Logger.debug("#{__MODULE__} hibernating...")
+    {:noreply, state, :hibernate}
+  end
+
+  def handle_info(msg, state) do
+    Logger.warn("unhandled_message: #{inspect msg}")
+    {:noreply, state, state.msg_timeout}
   end
 
   # Helpers

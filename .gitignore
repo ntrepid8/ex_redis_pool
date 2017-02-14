@@ -5,3 +5,5 @@
 erl_crash.dump
 *.ez
 ex_redis_pool-*.*.*.tar
+/.vagrant
+*.log

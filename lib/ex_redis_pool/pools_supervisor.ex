@@ -11,21 +11,20 @@ defmodule ExRedisPool.PoolsSupervisor do
   """
   import Supervisor.Spec, warn: false
   use Supervisor
-  alias ExRedisPool.RedisPool
   require Logger
 
   def start_link(opts \\ []) do
     Supervisor.start_link(__MODULE__, opts, [name: __MODULE__])
   end
 
-  def init(opts) do
+  def init(_opts) do
     Logger.debug("#{__MODULE__} starting up...")
     children = []
     supervise(children, strategy: :one_for_one)
   end
 
   def new_pool(pool_ref, pool_opts, worker_opts) do
-    {:ok, child} =
+    {:ok, _child} =
       Supervisor.start_child(__MODULE__, :poolboy.child_spec(pool_ref, pool_opts, worker_opts))
   end
 
