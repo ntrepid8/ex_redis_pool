@@ -31,7 +31,7 @@ defmodule ExRedisPool.RedisPoolWorker do
     # recycle_count
     # recycle the worker after this many queries
     # help the GC on busy systems
-    recycle_count: 10_000,
+    recycle_count: 50_000,
   ]
 
   def start_link(opts \\ []) do
