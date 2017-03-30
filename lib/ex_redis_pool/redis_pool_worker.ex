@@ -150,6 +150,9 @@ defmodule ExRedisPool.RedisPoolWorker do
       true ->
         # many queries have been run, recycle this worker
         Logger.debug("#{__MODULE__} #{state.host}:#{state.port} recycling")
+        # stop the client
+        :eredis.stop(state.client)
+        # shutdown
         {:stop, :normal, reply, state}
     end
   end
