@@ -31,7 +31,7 @@ defmodule ExRedisPool.RedisPoolWorker do
     # recycle_count
     # recycle the worker after this many queries
     # help the GC on busy systems
-    recycle_count: 10_000,
+    recycle_count: 50_000,
   ]
 
   def start_link(opts \\ []) do
@@ -150,6 +150,9 @@ defmodule ExRedisPool.RedisPoolWorker do
       true ->
         # many queries have been run, recycle this worker
         Logger.debug("#{__MODULE__} #{state.host}:#{state.port} recycling")
+        # stop the client
+        :eredis.stop(state.client)
+        # shutdown
         {:stop, :normal, reply, state}
     end
   end
